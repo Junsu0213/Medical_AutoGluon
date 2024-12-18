@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabular Regression</title>
+    <style>
+        body {
+            background-color: #0d1321;
+            color: white;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: #1e2a3b;
+            padding: 30px;
+            border-radius: 15px;
+            width: 50%;
+            max-width: 800px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+        }
+
+        .container h2, .info-title {
+            margin-bottom: 20px;
+            color: #7aa1f7;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+
+        .form-group input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 1em;
+            color: white;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .slider-container span {
+            margin-right: 10px;
+            font-size: 1em;
+        }
+
+        .submit-btn {
+            background-color: #7aa1f7;
+            color: white;
+            padding: 15px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.1em;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .submit-btn:hover {
+            background-color: #5690e7;
+        }
+
+        .info-btn {
+            background-color: #7aa1f7;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+            font-size: 1em;
+            margin-bottom: 10px;
+        }
+
+        .info-btn:hover {
+            background-color: #5690e7;
+        }
+
+        .info-content {
+            display: none;
+            text-align: left;
+        }
+
+        .info-content.active {
+            display: block;
+        }
+
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: white;
+            font-size: 1.5em;
+        }
+
+        .loading p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Tabular Regression Form -->
+    <div class="container">
+        <h2>Tabular Regression</h2>
+        <form id="regressionForm" enctype="multipart/form-data" onsubmit="event.preventDefault(); startRegression();">
+            <div class="form-group">
+                <label for="data_file">Upload CSV File:</label>
+                <input type="file" id="data_file" name="data_file" accept=".csv" required>
+            </div>
+            <div class="form-group">
+                <label for="label_column">Target Column (Continuous Value):</label>
+                <input type="text" id="label_column" name="label_column" placeholder="Enter the target column name" required>
+            </div>
+            <div class="form-group">
+                <label for="eval_metric">Evaluation Metric:</label>
+                <select id="eval_metric" name="eval_metric" required>
+                    <option value="root_mean_squared_error">Root Mean Squared Error (RMSE)</option>
+                    <option value="mean_squared_error">Mean Squared Error (MSE)</option>
+                    <option value="mean_absolute_error">Mean Absolute Error (MAE)</option>
+                    <option value="r2">R-squared (R²)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="preset">Preset:</label>
+                <select id="preset" name="preset" required>
+                    <option value="best_quality">Best Quality</option>
+                    <option value="high_quality">High Quality</option>
+                    <option value="good_quality">Good Quality</option>
+                    <option value="medium_quality">Medium Quality</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="time_limit">Train Time Limit (seconds):</label>
+                <div class="slider-container">
+                    <span id="time_limit_value">300</span> seconds
+                    <input type="range" id="time_limit" name="time_limit" 
+                           min="120" max="3000" value="300" step="10" 
+                           oninput="updateTimeLimitValue(this.value)">
+                </div>
+            </div>
+            <button type="submit" class="submit-btn">Start Regression</button>
+        </form>
+    </div>
+
+    <!-- Model/Parameter Information -->
+    <div class="container">
+        <h2 class="info-title">Information</h2>
+        <button class="info-btn" onclick="showInfo('model')">Model Info</button>
+        <button class="info-btn" onclick="showInfo('parameters')">Parameter Info</button>
+        <div id="model" class="info-content">
+            <p><strong>Model:</strong> AutoGluon Tabular Regression Model</p>
+            <ul>
+                <li>Automatically selects and ensembles the best regression algorithms</li>
+                <li>Includes LightGBM, CatBoost, XGBoost, Random Forest</li>
+                <li>Performs hyperparameter optimization</li>
+                <li>Handles numerical and categorical features automatically</li>
+            </ul>
+        </div>
+        <div id="parameters" class="info-content">
+            <p><strong>Parameters:</strong></p>
+            <ul>
+                <li><strong>Preset:</strong> Controls the trade-off between training quality and speed</li>
+                <li><strong>Evaluation Metric:</strong>
+                    <ul>
+                        <li>RMSE: Square root of average squared prediction error</li>
+                        <li>MSE: Average squared prediction error</li>
+                        <li>MAE: Average absolute prediction error</li>
+                        <li>R²: Proportion of variance explained by the model</li>
+                    </ul>
+                </li>
+                <li><strong>Train Time Limit:</strong> Maximum time allowed for model training</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Loading Screen -->
+    <div class="loading" id="loading">
+        <p>Training in Progress... Please Wait</p>
+        <p>Remaining Time: <span id="remaining_time"></span> seconds</p>
+    </div>
+
+    <script>
+        function updateTimeLimitValue(value) {
+            document.getElementById('time_limit_value').innerText = value;
+        }
+
+        function showInfo(section) {
+            const contents = document.querySelectorAll('.info-content');
+            contents.forEach(content => content.classList.remove('active'));
+            document.getElementById(section).classList.add('active');
+        }
+
+        async function startRegression() {
+            const form = document.getElementById('regressionForm');
+            const formData = new FormData(form);
+
+            // Show loading screen
+            const loadingScreen = document.getElementById("loading");
+            const remainingTime = document.getElementById("remaining_time");
+            loadingScreen.style.display = "flex";
+
+            const timeLimit = parseInt(formData.get('time_limit'), 10);
+
+            // Countdown timer
+            let timeLeft = timeLimit;
+            remainingTime.innerText = timeLeft;
+
+            const timer = setInterval(() => {
+                timeLeft -= 1;
+                remainingTime.innerText = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                }
+            }, 1000);
+
+            try {
+                const response = await fetch("/tabular/regression", {
+                    method: "POST",
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                // Hide loading screen
+                clearInterval(timer);
+                loadingScreen.style.display = "none";
+
+                if (result.error) {
+                    alert('Error: ' + result.error);
+                } else {
+                    if (result.redirect) {
+                        window.location.href = '/tabular/regression-results';
+                    }
+                }
+            } catch (error) {
+                clearInterval(timer);
+                loadingScreen.style.display = "none";
+                console.error('Error:', error);
+                alert("An error occurred during training.");
+            }
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classification Results</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: white;
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .result-section {
+            background-color: #1e293b;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            color: #60a5fa;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        /* 모델 리더보드 스타일 */
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .leaderboard-table th, .leaderboard-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #2d3748;
+        }
+
+        .leaderboard-table th {
+            background-color: #2d3748;
+            color: #60a5fa;
+        }
+
+        /* 차트 컨테이너 스타일 */
+        .chart-container {
+            min-height: 500px;
+            margin: 20px auto;
+            max-width: 800px;
+        }
+
+        /* 메트릭 카드 스타일 */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .metric-card {
+            background-color: #2d3748;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 1.5em;
+            color: #60a5fa;
+            margin: 10px 0;
+        }
+
+        .metric-label {
+            font-size: 0.9em;
+            color: #94a3b8;
+        }
+
+        /* 탭 스타일 */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            background-color: #2d3748;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+        }
+
+        .tab.active {
+            background-color: #60a5fa;
+        }
+
+        /* 예측 결과 테이블 스타일 */
+        .predictions-table {
+            width: 100%;
+            margin-top: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .predictions-table th, .predictions-table td {
+            padding: 8px;
+            text-align: center;
+            border-bottom: 1px solid #2d3748;
+        }
+
+        /* 테이블 헤더 고정 */
+        .predictions-table thead {
+            position: sticky;
+            top: 0;
+            background-color: #1e293b;
+            z-index: 1;
+        }
+
+        /* 테이블 셀 스타일 */
+        .predictions-table td {
+            padding: 12px 8px;  /* 셀 높이 증가 */
+        }
+
+        /* 짝수/홀수 행 구분 */
+        .predictions-table tbody tr:nth-child(even) {
+            background-color: #2d3748;
+        }
+
+        /* 테이블 행 호버 효과 */
+        .predictions-table tbody tr:hover {
+            background-color: #3e4c6a;  /* 더 밝은 색상으로 변경 */
+        }
+
+        /* Prediction Results 섹션 스타일 추가 */
+        #confusionMatrix {
+            padding: 20px;
+            min-height: 600px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Confusion Matrix 차트 컨테이너 스타일 */
+        #confusionMatrixChart {
+            margin: 0 auto;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .best-model {
+            background-color: #2d3748;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .model-label {
+            color: #94a3b8;
+            margin-right: 10px;
+        }
+
+        .model-value {
+            color: #60a5fa;
+            font-weight: bold;
+        }
+
+        .dataset-info {
+            background-color: #2d3748;
+            padding: 8px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+            border-left: 4px solid #60a5fa;
+        }
+
+        .info-label {
+            color: #94a3b8;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .info-text {
+            color: #e2e8f0;
+        }
+
+        /* ROC Curve 컨테이너 스타일 추가 */
+        #rocCurve {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 600px;
+        }
+
+        #rocCurveChart {
+            margin: 0 auto;
+            width: 100%;
+            max-width: 600px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 모델 성능 리더보드 섹션 -->
+        <div class="result-section">
+            <h2 class="section-title">Model Performance Leaderboard (Validation Dataset)</h2>
+            <table class="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th>Model</th>
+                        <th>Accuracy</th>
+                        <th>Training Time</th>
+                        <th>Inference Time</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboardBody">
+                    <!-- JavaScript로 데이터 채움 -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 특성 중요도 섹션 -->
+        <div class="result-section">
+            <h2 class="section-title">Feature Importance</h2>
+            <div id="featureImportanceChart" class="chart-container">
+                <!-- Plotly 차트가 여기에 렌더링됨 -->
+            </div>
+        </div>
+
+        <!-- 성능 지표 섹션 -->
+        <div class="result-section">
+            <h2 class="section-title">Performance Metrics (Test Dataset)</h2>
+            <div class="dataset-info">
+                <span class="info-label">Note:</span>
+                <span class="info-text">Test dataset is 20% of the original data that was not used during training</span>
+            </div>
+            <div class="best-model">
+                <span class="model-label">Best Model:</span>
+                <span class="model-value" id="bestModel">-</span>
+            </div>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Accuracy</div>
+                    <div class="metric-value" id="accuracyMetric">0.95</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">F1 Score</div>
+                    <div class="metric-value" id="f1Metric">0.94</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">ROC AUC</div>
+                    <div class="metric-value" id="rocAucMetric">0.96</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 예측 결과 섹션 -->
+        <div class="result-section">
+            <h2 class="section-title">Prediction Results</h2>
+            <div class="tabs">
+                <button class="tab active" onclick="showTab('samplePredictions')">Sample Predictions (10)</button>
+                <button class="tab" onclick="showTab('confusionMatrix')">Confusion Matrix</button>
+                <button class="tab" onclick="showTab('rocCurve')">ROC Curve</button>
+            </div>
+            <div id="samplePredictions">
+                <table class="predictions-table">
+                    <thead>
+                        <tr>
+                            <th>Actual</th>
+                            <th>Predicted</th>
+                            <th>Probability</th>
+                        </tr>
+                    </thead>
+                    <tbody id="predictionsBody">
+                        <!-- JavaScript로 데이터 채움 -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="confusionMatrix" style="display: none;">
+                <div id="confusionMatrixChart" class="chart-container">
+                    <!-- Plotly 차트가 여기에 렌더링됨 -->
+                </div>
+            </div>
+            <div id="rocCurve" style="display: none;">
+                <div id="rocCurveChart" class="chart-container">
+                    <!-- Plotly 차트가 여기에 렌더링됨 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API 응답 데이터를 받아서 UI 업데이트
+        function updateUI(data) {
+            if (!data) {
+                console.error('No data received');
+                return;
+            }
+
+            // 리더보드 업데이트 (상위 10개)
+            const leaderboardBody = document.getElementById('leaderboardBody');
+            // 최고 성능 모델 찾기
+            let bestModel = null;
+            if (data.leaderboard && Array.isArray(data.leaderboard) && data.leaderboard.length > 0) {
+                bestModel = [...data.leaderboard]
+                    .sort((a, b) => b.score_val - a.score_val)[0];
+                
+                // 최고 성능 모델 표시
+                document.getElementById('bestModel').textContent = 
+                    `${bestModel.model} (Score: ${bestModel.score_val.toFixed(4)})`;
+                
+                // 리더보드 테이블 업데이트
+                data.leaderboard
+                    .sort((a, b) => b.score_val - a.score_val)
+                    .slice(0, 10)
+                    .forEach(model => {
+                        const row = `
+                            <tr>
+                                <td>${model.model}</td>
+                                <td>${model.score_val.toFixed(4)}</td>
+                                <td>${model.fit_time.toFixed(2)}s</td>
+                                <td>${model.pred_time.toFixed(2)}s</td>
+                            </tr>
+                        `;
+                        leaderboardBody.innerHTML += row;
+                    });
+            } else {
+                document.getElementById('bestModel').textContent = 'No model data available';
+                leaderboardBody.innerHTML = '<tr><td colspan="4">No leaderboard data available</td></tr>';
+            }
+
+            // 특성 중요도 차트 (상위 10개)
+            if (data.feature_importance) {
+                const features = Object.entries(data.feature_importance)
+                    .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))  // 절대값 기준 내림차순 정렬
+                    .slice(0, 10);  // 상위 10개만 선택
+                
+                const featureImportance = {
+                    x: features.map(f => f[0]),
+                    y: features.map(f => f[1]),
+                    type: 'bar',
+                    marker: {
+                        color: features.map(f => f[1] >= 0 ? '#60a5fa' : '#ef4444')  // 양수는 파란색, 음수는 빨간색
+                    }
+                };
+
+                const layout = {
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    font: { color: '#fff' },
+                    margin: { t: 30 },
+                    title: {
+                        text: 'Top 10 Feature Importance (by Absolute Value)',
+                        font: { color: '#fff' }
+                    },
+                    xaxis: {
+                        tickangle: 45
+                    },
+                    yaxis: {
+                        title: 'Importance Value',
+                        zeroline: true,
+                        zerolinecolor: '#fff',
+                        gridcolor: 'rgba(255,255,255,0.1)'
+                    }
+                };
+
+                Plotly.newPlot('featureImportanceChart', [featureImportance], layout);
+            }
+
+            // 성능 지표 업데이트
+            if (data.performance_metrics) {
+                document.getElementById('accuracyMetric').textContent = 
+                    data.performance_metrics.accuracy?.toFixed(4) || 'N/A';
+                document.getElementById('f1Metric').textContent = 
+                    data.performance_metrics.f1?.toFixed(4) || 'N/A';
+                document.getElementById('rocAucMetric').textContent = 
+                    data.performance_metrics.roc_auc?.toFixed(4) || 'N/A';
+            }
+
+            // 예측 결과 샘플 업데이트
+            if (data.sample_predictions) {
+                const predictionsBody = document.getElementById('predictionsBody');
+                data.sample_predictions.forEach(pred => {
+                    const row = `
+                        <tr>
+                            <td>${pred.Actual}</td>
+                            <td>${pred.Predicted}</td>
+                            <td>${pred.Probability?.toFixed(4) || 'N/A'}</td>
+                        </tr>
+                    `;
+                    predictionsBody.innerHTML += row;
+                });
+            }
+
+            // Confusion Matrix 업데이트
+            if (data.confusion_matrix) {
+                createConfusionMatrix(data);
+            }
+
+            // ROC Curve 업데이트
+            if (data.roc_data) {
+                createROCCurve(data);
+            }
+
+            // 디버깅을 위한 데이터 출력
+            console.log('Received data:', data);
+        }
+
+        // 탭 전환 함수
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+
+            document.getElementById('samplePredictions').style.display = 
+                tabName === 'samplePredictions' ? 'block' : 'none';
+            document.getElementById('confusionMatrix').style.display = 
+                tabName === 'confusionMatrix' ? 'block' : 'none';
+            document.getElementById('rocCurve').style.display = 
+                tabName === 'rocCurve' ? 'block' : 'none';
+        }
+
+        // 페이지 로딩 시 API 호출
+        window.onload = function() {
+            // API 엔드포인트에서 결과 데이터 가져오기
+            fetch('/api/tabular/classification-results')
+                .then(response => {
+                    console.log('API Response:', response);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Received Data:', data);
+                    updateUI(data);
+                })
+                .catch(error => {
+                    console.error('API Error:', error);
+                    console.error('Error:', error)
+                });
+        };
+
+        // confusion matrix 차트 생성 함수 추가
+        function createConfusionMatrix(data) {
+            if (!data.confusion_matrix) return;
+
+            const matrix = data.confusion_matrix;
+            const labels = [...Array(matrix.length).keys()];
+            
+            const trace = {
+                type: 'heatmap',
+                z: matrix,
+                x: labels,
+                y: labels,
+                colorscale: [
+                    [0, '#ffffff'],      // 낮은 값: 흰색
+                    [1, '#1a365d']       // 높은 값: 진한 파란색
+                ],
+                showscale: true,
+                text: matrix.map(row => row.map(String)),
+                texttemplate: '%{text}',
+                textfont: { 
+                    color: 'black',  // 기본 텍스트 색상을 검정색으로
+                    size: 16         // 텍스트 크기 증가
+                },
+                hoverongaps: false
+            };
+
+            const layout = {
+                title: {
+                    text: `Confusion Matrix (${matrix.length}x${matrix.length})`,
+                    font: { color: '#fff' }
+                },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { color: '#fff' },
+                width: 550,
+                height: 550,
+                margin: {
+                    l: 70,
+                    r: 70,
+                    t: 70,
+                    b: 70
+                },
+                autosize: true,
+                xaxis: { 
+                    title: 'Predicted',
+                    ticktext: labels,
+                    tickvals: labels
+                },
+                yaxis: { 
+                    title: 'Actual',
+                    ticktext: labels,
+                    tickvals: labels,
+                    scaleanchor: 'x',
+                    scaleratio: 1
+                },
+                annotations: []
+            };
+
+            // 각 셀에 값 표시
+            for (let i = 0; i < matrix.length; i++) {
+                for (let j = 0; j < matrix[i].length; j++) {
+                    layout.annotations.push({
+                        x: j,
+                        y: i,
+                        text: matrix[i][j].toString(),
+                        font: { 
+                            color: 'black',  // 모든 텍스트를 검정색으로
+                            size: 16         // 텍스트 크기 증가
+                        },
+                        showarrow: false
+                    });
+                }
+            }
+
+            Plotly.newPlot('confusionMatrixChart', [trace], layout);
+        }
+
+        // ROC curve 생성 함수 추가
+        function createROCCurve(data) {
+            if (!data.roc_data) {
+                document.getElementById('rocCurve').innerHTML = 
+                    '<p style="text-align: center; color: #94a3b8;">ROC curve is only available for binary classification</p>';
+                return;
+            }
+
+            const trace = {
+                x: data.roc_data.fpr,
+                y: data.roc_data.tpr,
+                type: 'scatter',
+                mode: 'lines',
+                name: `ROC curve (AUC = ${data.roc_data.auc.toFixed(3)})`,
+                line: {
+                    color: '#60a5fa'
+                }
+            };
+
+            // 대각선 추가 (random classifier)
+            const diagonal = {
+                x: [0, 1],
+                y: [0, 1],
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Random Classifier',
+                line: {
+                    dash: 'dash',
+                    color: '#ef4444'
+                }
+            };
+
+            const layout = {
+                title: {
+                    text: 'Receiver Operating Characteristic (ROC) Curve',
+                    font: { color: '#fff' },
+                    y: 0.95  // 제목 위치 약간 위로 조정
+                },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { color: '#fff' },
+                width: 550,
+                height: 550,
+                margin: {
+                    l: 70,
+                    r: 70,
+                    t: 70,
+                    b: 70,
+                    autoexpand: true
+                },
+                autosize: true,  // 자동 크기 조정 활성화
+                xaxis: {
+                    title: 'False Positive Rate',
+                    gridcolor: 'rgba(255,255,255,0.1)',
+                    range: [0, 1]
+                },
+                yaxis: {
+                    title: 'True Positive Rate',
+                    gridcolor: 'rgba(255,255,255,0.1)',
+                    range: [0, 1],
+                    scaleanchor: 'x',
+                    scaleratio: 1
+                },
+                showlegend: true,
+                legend: {
+                    x: 0.1,
+                    y: 0.9,
+                    font: { color: '#fff' }
+                }
+            };
+
+            // 차트 생성 시 config 옵션 추가
+            const config = {
+                responsive: true,
+                displayModeBar: true,
+                displaylogo: false
+            };
+
+            Plotly.newPlot('rocCurveChart', [trace, diagonal], layout, config);
+        }
+    </script>
+</body>
+</html> 

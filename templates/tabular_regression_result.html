@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Regression Results</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: white;
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .result-section {
+            background-color: #1e293b;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            color: #60a5fa;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .leaderboard-table th, .leaderboard-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #2d3748;
+        }
+
+        .leaderboard-table th {
+            background-color: #2d3748;
+            color: #60a5fa;
+        }
+
+        .chart-container {
+            min-height: 500px;
+            margin: 20px auto;
+            max-width: 800px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .metric-card {
+            background-color: #2d3748;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 1.5em;
+            color: #60a5fa;
+            margin: 10px 0;
+        }
+
+        .metric-label {
+            font-size: 0.9em;
+            color: #94a3b8;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            background-color: #2d3748;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+        }
+
+        .tab.active {
+            background-color: #60a5fa;
+        }
+
+        .predictions-table {
+            width: 100%;
+            margin-top: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .predictions-table th, .predictions-table td {
+            padding: 8px;
+            text-align: center;
+            border-bottom: 1px solid #2d3748;
+        }
+
+        .predictions-table thead {
+            position: sticky;
+            top: 0;
+            background-color: #1e293b;
+            z-index: 1;
+        }
+
+        .predictions-table td {
+            padding: 12px 8px;
+        }
+
+        .predictions-table tbody tr:nth-child(even) {
+            background-color: #2d3748;
+        }
+
+        .predictions-table tbody tr:hover {
+            background-color: #3e4c6a;
+        }
+
+        .regression-plots {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .regression-plots img {
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .best-model {
+            background-color: #2d3748;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .model-label {
+            color: #94a3b8;
+            margin-right: 10px;
+        }
+
+        .model-value {
+            color: #60a5fa;
+            font-weight: bold;
+        }
+
+        .dataset-info {
+            background-color: #2d3748;
+            padding: 8px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+            border-left: 4px solid #60a5fa;
+        }
+
+        .info-label {
+            color: #94a3b8;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .info-text {
+            color: #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 모델 성능 리더보드 섹션 -->
+        <div class="result-section">
+            <h2 class="section-title">Model Performance Leaderboard</h2>
+            <div class="dataset-info">
+                <span class="info-label">Note:</span>
+                <span class="info-text">Results are based on 20% test data not used during training</span>
+            </div>
+            <table class="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th>Model</th>
+                        <th>RMSE Score</th>
+                        <th>Training Time</th>
+                        <th>Inference Time</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboardBody">
+                    <!-- JavaScript로 데이터 채움 -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 성능 지표 섹션 -->
+        <div class="result-section">
+            <h2 class="section-title">Performance Metrics</h2>
+            <div class="best-model">
+                <span class="model-label">Best Model:</span>
+                <span class="model-value" id="bestModel">-</span>
+            </div>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">RMSE</div>
+                    <div class="metric-value" id="rmseMetric">-</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">MSE</div>
+                    <div class="metric-value" id="mseMetric">-</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">MAE</div>
+                    <div class="metric-value" id="maeMetric">-</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">R²</div>
+                    <div class="metric-value" id="r2Metric">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 특귀 결과 시각화 섹션 -->
+        <div class="result-section">
+            <h2 class="section-title">Regression Analysis Plots</h2>
+            <div class="regression-plots">
+                <img id="regressionPlots" src="" alt="Regression Analysis Plots">
+            </div>
+        </div>
+
+        <!-- 특성 중요도 섹션 -->
+        <div class="result-section">
+            <h2 class="section-title">Feature Importance</h2>
+            <div id="featureImportanceChart" class="chart-container">
+                <!-- Plotly 차트가 여기에 렌더링됨 -->
+            </div>
+        </div>
+
+        <!-- 예측 결과 샘플 섹션 -->
+        <div class="result-section">
+            <h2 class="section-title">Sample Predictions</h2>
+            <table class="predictions-table">
+                <thead>
+                    <tr>
+                        <th>Actual Value</th>
+                        <th>Predicted Value</th>
+                        <th>Difference</th>
+                    </tr>
+                </thead>
+                <tbody id="predictionsBody">
+                    <!-- JavaScript로 데이터 채움 -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function updateUI(data) {
+            if (!data) {
+                console.error('No data received');
+                return;
+            }
+
+            // 리더보드 업데��트
+            if (data.leaderboard && Array.isArray(data.leaderboard)) {
+                const leaderboardBody = document.getElementById('leaderboardBody');
+                
+                // RMSE 절대값으로 변환하고 오름차순 정렬
+                const sortedModels = [...data.leaderboard]
+                    .map(model => ({
+                        ...model,
+                        score_val: Math.abs(model.score_val || 0)  // RMSE 절대값 변환
+                    }))
+                    .sort((a, b) => a.score_val - b.score_val);  // 오름차순 정렬 (낮은 RMSE가 더 좋음)
+                
+                // 최고 성능 모델 (RMSE가 가장 낮은 모델) 표시
+                const bestModel = sortedModels[0];
+                if (bestModel) {
+                    document.getElementById('bestModel').textContent = 
+                        `${bestModel.model}`;
+                    
+                    // Performance Metrics 업데이트
+                    if (data.performance_metrics) {
+                        document.getElementById('rmseMetric').textContent = 
+                            bestModel.score_val.toFixed(4);  // 베스트 모델의 RMSE 사용
+                        document.getElementById('mseMetric').textContent = 
+                            (data.performance_metrics.mse || 0).toFixed(4);
+                        document.getElementById('maeMetric').textContent = 
+                            (data.performance_metrics.mae || 0).toFixed(4);
+                        document.getElementById('r2Metric').textContent = 
+                            (data.performance_metrics.r2 || 0).toFixed(4);
+                    }
+                }
+                
+                // 상위 10개 모델만 리더보드에 표시
+                leaderboardBody.innerHTML = '';  // 기존 내용 초기화
+                sortedModels.slice(0, 10).forEach(model => {
+                    const row = `
+                        <tr>
+                            <td>${model.model}</td>
+                            <td>${model.score_val.toFixed(4)}</td>
+                            <td>${(model.fit_time || 0).toFixed(2)}s</td>
+                            <td>${(model.pred_time || 0).toFixed(2)}s</td>
+                        </tr>
+                    `;
+                    leaderboardBody.innerHTML += row;
+                });
+            }
+
+            // 회귀 플롯 업데이트
+            if (data.plot_path) {
+                document.getElementById('regressionPlots').src = data.plot_path;
+            }
+
+            // 성능 지표 업데이트
+            if (data.performance_metrics) {
+                const metrics = data.performance_metrics;
+                // Best Model 업데이트
+                document.getElementById('bestModel').textContent = 
+                    `${metrics.best_model || 'Unknown'}`;
+                
+                // 나머지 메트릭 업데이트
+                document.getElementById('rmseMetric').textContent = 
+                    (metrics.rmse || 0).toFixed(4);
+                document.getElementById('mseMetric').textContent = 
+                    (metrics.mse || 0).toFixed(4);
+                document.getElementById('maeMetric').textContent = 
+                    (metrics.mae || 0).toFixed(4);
+                document.getElementById('r2Metric').textContent = 
+                    (metrics.r2 || 0).toFixed(4);
+            }
+
+            // 예측 결과 샘플 업데이트
+            if (data.sample_predictions && Array.isArray(data.sample_predictions)) {
+                const predictionsBody = document.getElementById('predictionsBody');
+                data.sample_predictions.forEach(pred => {
+                    if (pred) {  // 예측 객체 확인
+                        const actual = pred.Actual || 0;
+                        const predicted = pred.Predicted || 0;
+                        const difference = Math.abs(actual - predicted);
+                        
+                        const row = `
+                            <tr>
+                                <td>${actual.toFixed(2)}</td>
+                                <td>${predicted.toFixed(2)}</td>
+                                <td>${difference.toFixed(2)}</td>
+                            </tr>
+                        `;
+                        predictionsBody.innerHTML += row;
+                    }
+                });
+            }
+
+            // 특성 중요도 차트
+            if (data.feature_importance) {
+                const features = Object.entries(data.feature_importance)
+                    .sort((a, b) => Math.abs(b[1] || 0) - Math.abs(a[1] || 0));
+                
+                const featureImportance = {
+                    x: features.map(f => f[0]),
+                    y: features.map(f => f[1] || 0),
+                    type: 'bar',
+                    marker: {
+                        color: features.map(f => (f[1] || 0) >= 0 ? '#60a5fa' : '#ef4444')
+                    }
+                };
+
+                const layout = {
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    font: { color: '#fff' },
+                    margin: { t: 30 },
+                    title: {
+                        text: 'Top 10 Feature Importance (by Absolute Value)',
+                        font: { color: '#fff' }
+                    },
+                    xaxis: {
+                        tickangle: 45,
+                        gridcolor: 'rgba(255,255,255,0.1)'
+                    },
+                    yaxis: {
+                        title: 'Importance Value',
+                        gridcolor: 'rgba(255,255,255,0.1)'
+                    }
+                };
+
+                Plotly.newPlot('featureImportanceChart', [featureImportance], layout);
+            }
+        }
+
+        // 페이지 로딩 시 API 호출
+        window.onload = function() {
+            fetch('/api/tabular/regression-results')
+                .then(response => {
+                    console.log('API Response status:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('API Response data:', data);
+                    if (data.error) {
+                        console.error('API Error:', data.error);
+                        return;
+                    }
+                    updateUI(data);
+                })
+                .catch(error => {
+                    console.error('API Error:', error);
+                });
+        };
+    </script>
+</body>
+</html> 
