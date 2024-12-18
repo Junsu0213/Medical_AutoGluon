@@ -1,4 +1,3 @@
-```markdown:README.md
 # BMC Medical AutoGluon
 
 > An automated machine learning platform for medical data analysis, utilizing AutoGluon to perform classification and regression on tabular and image data.
