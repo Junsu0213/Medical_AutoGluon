@@ -28,13 +28,13 @@ BMC Medical AutoGluon is an automated machine learning platform for medical data
 *Tabular classification configuration screen*
 
 ![Classification Results](screenshots/classification_results.png)
-*Classification model performance and analysis results*
+*Tabular classification model performance and analysis results*
 
 ![Regression Analysis](screenshots/regression.png)
-*Regression analysis configuration screen*
+*Tabular regression analysis configuration screen*
 
 ![Regression Results](screenshots/regression_results.png)
-*Regression model performance and analysis results*
+*Tabular regression model performance and analysis results*
 
 ## Features
 
@@ -155,4 +155,3 @@ This project is licensed under the MIT License.
 - **Developer**: JUN-SU PARK
 - **Email**: junsupark0213@amc.seoul.kr
 - **Project Link**: https://github.com/Junsu0213/bmc-medical-autogluon
-```
