@@ -89,8 +89,8 @@ BMC Medical AutoGluon is an automated machine learning platform for medical data
 
 1. Clone the repository
 ```bash
-git clone https://github.com/Junsu0213/bmc-medical-autogluon.git
-cd bmc-medical-autogluon
+git clone https://github.com/Junsu0213/Medical_AutoGluon.git
+cd Medical_AutoGluon
 ```
 
 2. Install dependencies
@@ -134,18 +134,6 @@ http://localhost:5000
   - `preset`: Training configuration
   - `time_limit`: Training time limit
 
-## Development
-
-1. Set up development environment
-```bash
-pip install -r requirements-dev.txt
-```
-
-2. Run tests
-```bash
-pytest tests/
-```
-
 ## License
 
 This project is licensed under the MIT License.
@@ -154,4 +142,4 @@ This project is licensed under the MIT License.
 
 - **Developer**: JUN-SU PARK
 - **Email**: junsupark0213@amc.seoul.kr
-- **Project Link**: https://github.com/Junsu0213/bmc-medical-autogluon
+- **Project Link**: https://github.com/Junsu0213/Medical_AutoGluon
